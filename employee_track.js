@@ -72,7 +72,12 @@ function startPrompt() {
 //this function allows the user to view all the champions through the query, throws an error or displays the response and then runs the start function again.
 function viewAllChampions() {
   connection.query(
-    "SELECT champion.first_name, champion.last_name, role.title, role.salary, department.name, CONCAT(e.first_name, ' ' ,e.last_name) AS Manager FROM champion INNER JOIN role on role.id = champion.role_id INNER JOIN department on department.id = role.department_id left join champion e on champion.manager_id = e.id;",
+    `SELECT c.first_name AS 'First Name', c.last_name AS 'Last Name', class.title AS Class, CONCAT(c2.first_name, " ", c2.last_name) AS "Raid Leader"
+    FROM champion AS c
+    LEFT JOIN class
+    ON c.class_id = class.id
+    LEFT JOIN champion AS c2
+    ON c.raid_leader_id = c2.id;`,
     function (err, res) {
       if (err) throw err;
       console.table(res);
@@ -84,7 +89,10 @@ function viewAllChampions() {
 //allows the user to view all classes through the query, throws an error or displays the response and then runs the start function again
 function viewAllClasses() {
   connection.query(
-    "SELECT champion.first_name, champion.last_name, role.title AS Title FROM champion JOIN role ON champion.role_id = role.id;",
+    `SELECT champion.first_name AS 'First Name', champion.last_name AS 'Last Name', class.title AS Class 
+    FROM champion 
+    JOIN class 
+    ON champion.class_id = class.id;`,
     function (err, res) {
       if (err) throw err;
       console.table(res);
@@ -96,7 +104,13 @@ function viewAllClasses() {
 //allows user to view all races through the query, throws an error or displays the response and then runs the start function again.
 function viewAllRaces() {
   connection.query(
-    "SELECT champion.first_name, champion.last_name, department.name AS Department FROM champion JOIN role ON champion.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY champion.id;",
+    `SELECT champion.first_name AS 'First Name', champion.last_name AS 'Last Name', race.name AS Race 
+    FROM champion 
+    JOIN class 
+    ON champion.class_id = class.id 
+    JOIN race 
+    ON class.race_id = race.id 
+    ORDER BY champion.id;`,
     function (err, res) {
       if (err) throw err;
       console.table(res);
@@ -135,7 +149,10 @@ function selectLeader() {
 //
 function updateChampion() {
   connection.query(
-    "SELECT champion.last_name, class.title FROM champion JOIN class ON champion.class_id = class.id;",
+    `SELECT champion.last_name, class.title 
+    FROM champion 
+    JOIN class 
+    ON champion.class_id = class.id;`,
     function (err, res) {
       if (err) throw err;
       console.log(res);
@@ -156,7 +173,7 @@ function updateChampion() {
           {
             name: "class",
             type: "rawlist",
-            message: "What is the Champions new title? ",
+            message: "What is the Champions new class? ",
             choices: selectClass(),
           },
         ])
@@ -209,7 +226,7 @@ function addChampion() {
       },
     ])
     .then(function (val) {
-      let classId = selectClass().indexOf(val.role) + 1;
+      let classId = selectClass().indexOf(val.class) + 1;
       let leaderId = selectLeader().indexOf(val.choice) + 1;
       connection.query(
         "INSERT INTO champion SET ?",
@@ -230,14 +247,15 @@ function addChampion() {
 
 function addClass() {
   connection.query(
-    "SELECT class.title AS Title, class.gold AS Salary FROM class",
+    `SELECT class.title AS Class, class.gold AS Gold 
+    FROM class`,
     function (err, res) {
       inquirer
         .prompt([
           {
             name: "Title",
             type: "input",
-            message: "What is the roles Title?",
+            message: "What is the new Class?",
           },
           {
             name: "Gold",
